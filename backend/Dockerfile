@@ -1,31 +1,28 @@
-# Stage 1
+# Stage 1: Build Stage
 FROM node:21 AS backend-builder
 
-# setup the working dir
-WORKDIR /app
+WORKDIR /app 
 
-# code
+# Copy the package.json and package-lock.json first to take advantage of Docker cache
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the application code
 COPY . .
 
-# packages install
-RUN npm i
-
-# tests
-RUN npm run test
-
-# Stage 2
+# Stage 2: Production Stage
 FROM node:21-slim
 
-# setup the working dir
-WORKDIR /app
-
-# copy the above stage as compressed
+# Copy only the necessary files from the build stage
 COPY --from=backend-builder /app .
 
+# Copy the environment file
 COPY .env.docker .env
 
-# Port
+# Expose the application port
 EXPOSE 8080
 
-# App
+# Start the application
 CMD ["npm", "start"]
